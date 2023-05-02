@@ -1,23 +1,26 @@
-#include <cassert>
-#include <iostream>
-#include <string>
-#include <fstream>
+#include "json_reader.h"
+#include "map_renderer.h"
+#include "request_handler.h"
 
-#include "transport_catalogue.h"
-#include "input_reader.h"
-#include "stat_reader.h"
+using namespace std;
+using namespace transport_catalogue;
+using namespace map_renderer;
+using namespace request_handler;
+using namespace transport_catalogue::detail::json;
 
-int main(int argc, char** argv) {
-    transport_catalogue::TransportCatalogue catalogue;
+int main() {
+  vector<StatRequest> stat_request;
+  RenderSettings render_settings;
+  TransportCatalogue catalogue;
 
-    if (1 < argc) {
-        std::ifstream fin(argv[1], std::ios::in);
-        std::ofstream fout(argv[2], std::ios::out);
-        query_input::queryDataBaseUpdate(catalogue, fin);
-        query_output::queryDataBase(catalogue, fin, fout);
-    }
-    else {
-        query_input::queryDataBaseUpdate(catalogue, std::cin);
-        query_output::queryDataBase(catalogue, std::cin, std::cout);
-    }
+  JSONReader json_reader;
+  RequestHandler request_handler;
+
+  json_reader = JSONReader(cin);
+  json_reader.parse(catalogue, stat_request, render_settings);
+
+  request_handler = RequestHandler();
+  request_handler.execute_queries(catalogue, stat_request, render_settings);
+  transport_catalogue::detail::json::print(request_handler.get_document(),
+                                           cout);
 }
