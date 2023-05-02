@@ -21,4 +21,3 @@ struct Coordinates {
 double compute_distance(Coordinates start, Coordinates end);
     
 }//end namespace geo
-//not push
