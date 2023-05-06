@@ -1,41 +1,81 @@
 #pragma once
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "geo.h"
 #include "json.h"
 #include "map_renderer.h"
+#include "svg.h"
 #include "transport_catalogue.h"
 
-namespace transport_catalogue {
+namespace transport_directory {
+namespace json_reader {
+
+void PrintAnswearsForRequests(const json::Document &doc,
+                              transport_catalogue::TransportCatalogue guide,
+                              std::ostream &os = std::cout);
+
+void LoadTransportGuide(const json::Document &doc,
+                        transport_catalogue::TransportCatalogue &guide);
+
+renderer::MapRenderer CreateRenderer(const json::Document &doc);
+
+svg::Document
+CreateSvgDocumentMap(const renderer::MapRenderer &renderer,
+                     transport_catalogue::TransportCatalogue guide);
+
+void PrintMapToSvg(const json::Document &doc,
+                   transport_catalogue::TransportCatalogue guide,
+                   std::ostream &os = std::cout);
+
 namespace detail {
-namespace json {
 
-class JSONReader {
-public:
-  JSONReader() = default;
-  JSONReader(Document doc);
-  JSONReader(std::istream &input);
+json::Node
+RequestBusRoute(const json::Dict &request,
+                const transport_catalogue::TransportCatalogue &guide);
 
-  void parse_node_base(const Node &root, TransportCatalogue &catalogue);
-  void parse_node_stat(const Node &root,
-                       std::vector<StatRequest> &stat_request);
-  void parse_node_render(const Node &node,
-                         map_renderer::RenderSettings &render_settings);
-  void parse_node(const Node &root, TransportCatalogue &catalogue,
-                  std::vector<StatRequest> &stat_request,
-                  map_renderer::RenderSettings &render_settings);
-  void parse(TransportCatalogue &catalogue,
-             std::vector<StatRequest> &stat_request,
-             map_renderer::RenderSettings &render_settings);
+json::Node
+RequestBusesForStop(const json::Dict &request,
+                    const transport_catalogue::TransportCatalogue &guide);
 
-  Stop parse_node_stop(Node &node);
-  Bus parse_node_bus(Node &node, TransportCatalogue &catalogue);
-  std::vector<Distance> parse_node_distances(Node &node,
-                                             TransportCatalogue &catalogue);
+json::Node RequestMap(const json::Document &doc, const json::Dict &request,
+                      const transport_catalogue::TransportCatalogue &guide);
 
-  const Document &get_document() const;
+json::Node StatToJson(const transport_catalogue::StatBusRoute &stat,
+                      int request_id);
 
-private:
-  Document document_;
+json::Node StatToJson(const transport_catalogue::StatForStop &stat,
+                      int request_id);
+
+json::Node SvgToJson(std::string svg_str, int request_id);
+
+enum class TypeTransportObject { BUS, STOP };
+
+struct TransportObject {
+  TypeTransportObject type;
+  std::string name;
+  std::vector<std::string> stops;
+  geo::Coordinates coordinates;
+  std::vector<std::pair<std::string, int>> distances_to;
+  bool is_roundtrip = false;
 };
 
-} // end namespace json
-} // end namespace detail
-} // end namespace transport_catalogue
+void ParseDistancesToStops(const json::Node &node, TransportObject &obj);
+
+TransportObject ParseBusObject(const json::Node &node);
+
+TransportObject ParseStopObject(const json::Node &node);
+
+TransportObject ParseRequestToFillTransportGuide(const json::Node &doc);
+
+svg::Rgba LoadRgba(const json::Node &node);
+svg::Rgb LoadRgb(const json::Node &node);
+svg::Color LoadColor(const json::Node &node);
+std::vector<svg::Color> LoadColorPalette(const json::Node &node);
+renderer::RenderSettings LoadSettings(const json::Document &doc);
+} // namespace detail
+
+} // namespace json_reader
+} // namespace transport_directory

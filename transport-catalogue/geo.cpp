@@ -5,18 +5,16 @@
 
 namespace geo {
 
-double compute_distance(Coordinates start, Coordinates end) {
+double ComputeDistance(Coordinates from, Coordinates to) {
   using namespace std;
-
-  if (!(start == end)) {
-    const double dr = PI / 180.;
-    return acos(sin(start.latitude * dr) * sin(end.latitude * dr) +
-                cos(start.latitude * dr) * cos(end.latitude * dr) *
-                    cos(abs(start.longitude - end.longitude) * dr)) *
-           EARTH_RADIUS;
-  } else {
-    return 0.0;
+  if (from == to) {
+    return 0;
   }
+  static const double dr = M_PI / 180.;
+  return acos(sin(from.lat * dr) * sin(to.lat * dr) +
+              cos(from.lat * dr) * cos(to.lat * dr) *
+                  cos(abs(from.lng - to.lng) * dr)) *
+         EARTH_RADIUS;
 }
 
-} // end namespace geo
+} // namespace geo

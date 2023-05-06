@@ -1,55 +1,26 @@
 #pragma once
-
-#include <algorithm>
+#include "geo.h"
 #include <string>
 #include <vector>
 
-#include "geo.h"
+namespace transport_directory {
 
 namespace domain {
 
-struct StatRequest {
-  int id;
-  std::string type;
-  std::string name;
-};
-
-struct Bus;
-
 struct Stop {
+  Stop() = default;
+  Stop(std::string name_stop, geo::Coordinates coor);
   std::string name;
-  double latitude;
-  double longitude;
-
-  std::vector<Bus *> buses;
+  geo::Coordinates coordinates;
 };
 
-struct Bus {
+struct BusRoute {
+  BusRoute() = default;
+  BusRoute(std::string name_bus, std::vector<Stop *> bus_route);
   std::string name;
-  std::vector<Stop *> stops;
-  bool is_roundtrip;
-  size_t route_length;
+  std::vector<Stop *> route;
+  bool is_roundtrip = false;
 };
 
-struct Distance {
-  const Stop *start;
-  const Stop *end;
-  int distance;
-};
-
-struct BusQueryResult {
-  std::string_view name;
-  bool not_found;
-  int stops_on_route;
-  int unique_stops;
-  int route_length;
-  double curvature;
-};
-
-struct StopQueryResult {
-  std::string_view name;
-  bool not_found;
-  std::vector<std::string> buses_name;
-};
-
-} // end namespace domain
+} // namespace domain
+} // namespace transport_directory
