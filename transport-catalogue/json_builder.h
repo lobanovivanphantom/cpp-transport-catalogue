@@ -1,77 +1,95 @@
 #pragma once
+ 
 #include "json.h"
-#include <optional>
+#include <stack>
 #include <string>
-#include <vector>
-
+#include <memory>
+ 
+namespace transport_catalogue {
+namespace detail {
 namespace json {
-
-class Builder;
-class KeyItemContext;
-class DictItemConctext;
-class ArrayItemContext;
-
-class BaseContext {
-protected:
-  BaseContext(Builder &builder);
-  Builder &builder_;
-};
-
-class DictItemContext : virtual public BaseContext {
+namespace builder {
+ 
+class KeyContext;
+class DictionaryContext;
+class ArrayContext;
+ 
+class Builder {
 public:
-  DictItemContext(Builder &builder);
-
-  KeyItemContext &Key(std::string key);
-
-  Builder &EndDict();
-};
-
-class ArrayItemContext : virtual public BaseContext {
-public:
-  ArrayItemContext(Builder &builder);
-
-  ArrayItemContext &Value(Node::Value value);
-
-  DictItemContext &StartDict();
-
-  ArrayItemContext &StartArray();
-
-  Builder &EndArray();
-};
-
-class KeyItemContext : virtual public BaseContext {
-public:
-  KeyItemContext(Builder &builder);
-
-  DictItemContext &Value(Node::Value value);
-
-  ArrayItemContext &StartArray();
-
-  DictItemContext &StartDict();
-};
-
-class Builder : virtual public DictItemContext,
-                virtual public ArrayItemContext,
-                virtual public KeyItemContext {
-public:
-  Builder();
-
-  Builder &Value(Node::Value value);
-
-  DictItemContext &StartDict();
-
-  ArrayItemContext &StartArray();
-
-  json::Node Build();
-
-  Builder &EndDict();
-
-  Builder &EndArray();
-
-  KeyItemContext &Key(std::string key);
-
+    Node make_node(const Node::Value& value_);
+    void add_node(const Node& node);
+ 
+    KeyContext key(const std::string& key_);
+    Builder& value(const Node::Value& value);
+    
+    DictionaryContext start_dict();
+    Builder& end_dict();
+    
+    ArrayContext start_array();
+    Builder& end_array();
+ 
+    Node build();
+ 
 private:
-  std::optional<Node> root_;
-  std::vector<Node *> nodes_stack_;
+    Node root_;
+    std::vector<std::unique_ptr<Node>> nodes_stack_;
+ 
 };
-} // namespace json
+ 
+class BaseContext {
+public:
+    BaseContext(Builder& builder);
+ 
+    KeyContext key(const std::string& key);
+    Builder& value(const Node::Value& value);
+    
+    DictionaryContext start_dict();
+    Builder& end_dict();
+    
+    ArrayContext start_array();
+    Builder& end_array();
+ 
+protected:
+    Builder& builder_;
+ 
+};
+ 
+class KeyContext : public BaseContext {
+public:
+    KeyContext(Builder& builder);
+ 
+    KeyContext key(const std::string& key) = delete;
+ 
+    BaseContext end_dict() = delete;
+    BaseContext end_array() = delete;
+ 
+    DictionaryContext value(const Node::Value& value);
+};
+ 
+class DictionaryContext : public BaseContext {
+public:
+    DictionaryContext(Builder& builder);
+ 
+    DictionaryContext start_dict() = delete;
+ 
+    ArrayContext start_array() = delete;
+    Builder& end_array() = delete;
+ 
+    Builder& value(const Node::Value& value) = delete;
+};
+ 
+class ArrayContext : public BaseContext {
+public:
+    ArrayContext(Builder& builder);
+ 
+    KeyContext key(const std::string& key) = delete;
+ 
+    Builder& end_dict() = delete;
+ 
+    ArrayContext value(const Node::Value& value);
+};
+ 
+}//end namespace builder
+}//end namespace json
+}//end namespace detail
+}//end namespace transport_catalogue
