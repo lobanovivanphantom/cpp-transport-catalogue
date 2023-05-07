@@ -270,10 +270,13 @@ public:
 
 class Document : public ObjectContainer {
 public:
+  // Äîáàâëÿåò â svg-äîêóìåíò îáúåêò-íàñëåäíèê svg::Object
   void AddPtr(std::unique_ptr<Object> &&obj) override;
 
+  // Âûâîäèò â ostream svg-ïðåäñòàâëåíèå äîêóìåíòà
   void Render(std::ostream &out) const;
 
+  // Ïðî÷èå ìåòîäû è äàííûå, íåîáõîäèìûå äëÿ ðåàëèçàöèè êëàññà Document
 private:
   std::deque<std::unique_ptr<Object>> objects_;
 };

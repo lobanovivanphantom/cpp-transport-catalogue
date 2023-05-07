@@ -83,10 +83,13 @@ inline const double EPSILON = 1e-6;
 
 class SphereProjector {
 public:
+  // points_begin è points_end çàäàþò íà÷àëî è êîíåö èíòåðâàëà ýëåìåíòîâ
+  // geo::Coordinates
   template <typename PointInputIt>
   SphereProjector(PointInputIt points_begin, PointInputIt points_end,
                   double max_width, double max_height, double padding);
 
+  // Ïðîåöèðóåò øèðîòó è äîëãîòó â êîîðäèíàòû âíóòðè SVG-èçîáðàæåíèÿ
   svg::Point operator()(const geo::Coordinates &coords) const;
 
   static bool IsZero(double value) { return std::abs(value) < EPSILON; }
@@ -115,37 +118,46 @@ SphereProjector::SphereProjector(PointInputIt points_begin,
                                  PointInputIt points_end, double max_width,
                                  double max_height, double padding)
     : padding_(padding) {
+  // Åñëè òî÷êè ïîâåðõíîñòè ñôåðû íå çàäàíû, âû÷èñëÿòü íå÷åãî
   if (points_begin == points_end) {
     return;
   }
 
+  // Íàõîäèì òî÷êè ñ ìèíèìàëüíîé è ìàêñèìàëüíîé äîëãîòîé
   const auto [left_it, right_it] =
       std::minmax_element(points_begin, points_end,
                           [](auto lhs, auto rhs) { return lhs.lng < rhs.lng; });
   min_lon_ = left_it->lng;
   const double max_lon = right_it->lng;
 
+  // Íàõîäèì òî÷êè ñ ìèíèìàëüíîé è ìàêñèìàëüíîé øèðîòîé
   const auto [bottom_it, top_it] =
       std::minmax_element(points_begin, points_end,
                           [](auto lhs, auto rhs) { return lhs.lat < rhs.lat; });
   const double min_lat = bottom_it->lat;
   max_lat_ = top_it->lat;
 
+  // Âû÷èñëÿåì êîýôôèöèåíò ìàñøòàáèðîâàíèÿ âäîëü êîîðäèíàòû x
   std::optional<double> width_zoom;
   if (!IsZero(max_lon - min_lon_)) {
     width_zoom = (max_width - 2 * padding) / (max_lon - min_lon_);
   }
 
+  // Âû÷èñëÿåì êîýôôèöèåíò ìàñøòàáèðîâàíèÿ âäîëü êîîðäèíàòû y
   std::optional<double> height_zoom;
   if (!IsZero(max_lat_ - min_lat)) {
     height_zoom = (max_height - 2 * padding) / (max_lat_ - min_lat);
   }
 
   if (width_zoom && height_zoom) {
+    // Êîýôôèöèåíòû ìàñøòàáèðîâàíèÿ ïî øèðèíå è âûñîòå íåíóëåâûå,
+    // áåð¸ì ìèíèìàëüíûé èç íèõ
     zoom_coeff_ = std::min(*width_zoom, *height_zoom);
   } else if (width_zoom) {
+    // Êîýôôèöèåíò ìàñøòàáèðîâàíèÿ ïî øèðèíå íåíóëåâîé, èñïîëüçóåì åãî
     zoom_coeff_ = *width_zoom;
   } else if (height_zoom) {
+    // Êîýôôèöèåíò ìàñøòàáèðîâàíèÿ ïî âûñîòå íåíóëåâîé, èñïîëüçóåì åãî
     zoom_coeff_ = *height_zoom;
   }
 }

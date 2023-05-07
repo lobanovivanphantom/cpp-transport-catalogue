@@ -5,6 +5,8 @@ namespace json {
 
 BaseContext::BaseContext(Builder &builder) : builder_(builder) {}
 
+// ------------------ DictItemContext ------------------------------------
+
 DictItemContext::DictItemContext(Builder &builder) : BaseContext(builder) {}
 
 KeyItemContext &DictItemContext::Key(std::string key) {
@@ -12,6 +14,8 @@ KeyItemContext &DictItemContext::Key(std::string key) {
 }
 
 Builder &DictItemContext::EndDict() { return builder_.EndDict(); }
+
+// ------------------- ArrayItemContext -------------------------------------
 
 ArrayItemContext::ArrayItemContext(Builder &builder) : BaseContext(builder) {}
 
@@ -27,6 +31,8 @@ ArrayItemContext &ArrayItemContext::StartArray() {
 
 Builder &ArrayItemContext::EndArray() { return builder_.EndArray(); }
 
+// ------------------ KeyItemContext -------------------------------------
+
 KeyItemContext::KeyItemContext(Builder &builder) : BaseContext(builder) {}
 
 DictItemContext &KeyItemContext::Value(Node::Value value) {
@@ -36,6 +42,8 @@ DictItemContext &KeyItemContext::Value(Node::Value value) {
 ArrayItemContext &KeyItemContext::StartArray() { return builder_.StartArray(); }
 
 DictItemContext &KeyItemContext::StartDict() { return builder_.StartDict(); }
+
+// ------------------- Builder ----------------------------------------------
 
 Builder::Builder()
     : BaseContext(*this), DictItemContext(*this), ArrayItemContext(*this),

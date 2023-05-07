@@ -27,10 +27,13 @@ void PrintColor::operator()(const Rgba &rgba) const {
 void Object::Render(const RenderContext &context) const {
   context.RenderIndent();
 
+  // Äåëåãèðóåì âûâîä òåãà ñâîèì ïîäêëàññàì
   RenderObject(context);
 
   context.out << std::endl;
 }
+
+// ---------- Circle ------------------
 
 Circle &Circle::SetCenter(Point center) {
   center_ = center;
@@ -50,6 +53,7 @@ void Circle::RenderObject(const RenderContext &context) const {
   out << " />"sv;
 }
 
+//--------- Polyline --------------------
 Polyline &Polyline::AddPoint(Point point) {
   polyline_.push_back(std::move(point));
   return *this;
@@ -77,26 +81,31 @@ Text &Text::SetPosition(Point pos) {
   return *this;
 }
 
+// Çàäà¸ò ñìåùåíèå îòíîñèòåëüíî îïîðíîé òî÷êè (àòðèáóòû dx, dy)
 Text &Text::SetOffset(Point offset) {
   offset_ = offset;
   return *this;
 }
 
+// Çàäà¸ò ðàçìåðû øðèôòà (àòðèáóò font-size)
 Text &Text::SetFontSize(uint32_t size) {
   font_size_ = size;
   return *this;
 }
 
+// Çàäà¸ò íàçâàíèå øðèôòà (àòðèáóò font-family)
 Text &Text::SetFontFamily(std::string font_family) {
   font_family_ = std::move(font_family);
   return *this;
 }
 
+// Çàäà¸ò òîëùèíó øðèôòà (àòðèáóò font-weight)
 Text &Text::SetFontWeight(std::string font_weight) {
   font_weight_ = font_weight;
   return *this;
 }
 
+// Çàäà¸ò òåêñòîâîå ñîäåðæèìîå îáúåêòà (îòîáðàæàåòñÿ âíóòðè òåãà text)
 Text &Text::SetData(std::string data) {
   text_ = std::move(data);
   return *this;
@@ -117,10 +126,14 @@ void Text::RenderObject(const RenderContext &context) const {
   out << ">" << text_ << "</text>";
 }
 
+//-------------- Document ---------------
+
+// Äîáàâëÿåò â svg-äîêóìåíò îáúåêò-íàñëåäíèê svg::Object
 void Document::AddPtr(std::unique_ptr<Object> &&obj) {
   objects_.push_back(std::move(obj));
 }
 
+// Âûâîäèò â ostream svg-ïðåäñòàâëåíèå äîêóìåíòà
 void Document::Render(std::ostream &out) const {
   out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" << '\n'
       << "<svg xmlns=\"http://www.w3.org/2000/svg"
