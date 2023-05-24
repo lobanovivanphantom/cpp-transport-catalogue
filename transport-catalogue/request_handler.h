@@ -3,17 +3,24 @@
 #include "json_builder.h"
 #include "map_renderer.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 
 using namespace transport_catalogue;
 using namespace map_renderer;
 using namespace transport_catalogue::detail::json;
 using namespace transport_catalogue::detail::json::builder;
+using namespace transport_catalogue::detail::router;
 
 namespace request_handler {
 
 class RequestHandler {
 public:
   RequestHandler() = default;
+
+  std::optional<RouteInfo> get_route_info(std::string_view start,
+                                          std::string_view end,
+                                          TransportCatalogue &catalogue,
+                                          TransportRouter &routing) const;
 
   std::vector<geo::Coordinates>
   get_stops_coordinates(TransportCatalogue &catalogue_) const;
@@ -30,9 +37,15 @@ public:
                              const BusQueryResult &query_result);
   Node execute_make_node_map(int id_request, TransportCatalogue &catalogue,
                              RenderSettings render_settings);
+  Node execute_make_node_route(StatRequest &request,
+                               TransportCatalogue &catalogue,
+                               TransportRouter &routing);
+
   void execute_queries(TransportCatalogue &catalogue,
                        std::vector<StatRequest> &stat_requests,
-                       RenderSettings &render_settings);
+                       RenderSettings &render_settings,
+                       RoutingSettings &route_settings);
+
   void execute_render_map(MapRenderer &map_catalogue,
                           TransportCatalogue &catalogue_) const;
 

@@ -2,6 +2,7 @@
 #include "json.h"
 #include "map_renderer.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 
 namespace transport_catalogue {
 namespace detail {
@@ -18,12 +19,17 @@ public:
                        std::vector<StatRequest> &stat_request);
   void parse_node_render(const Node &node,
                          map_renderer::RenderSettings &render_settings);
+  void parse_node_routing(const Node &node, router::RoutingSettings &route_set);
+
   void parse_node(const Node &root, TransportCatalogue &catalogue,
                   std::vector<StatRequest> &stat_request,
-                  map_renderer::RenderSettings &render_settings);
+                  map_renderer::RenderSettings &render_settings,
+                  router::RoutingSettings &routing_settings);
+
   void parse(TransportCatalogue &catalogue,
              std::vector<StatRequest> &stat_request,
-             map_renderer::RenderSettings &render_settings);
+             map_renderer::RenderSettings &render_settings,
+             router::RoutingSettings &routing_settings);
 
   Stop parse_node_stop(Node &node);
   Bus parse_node_bus(Node &node, TransportCatalogue &catalogue);

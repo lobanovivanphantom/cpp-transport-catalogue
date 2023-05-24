@@ -154,10 +154,19 @@ void JSONReader::parse_node_stat(const Node &node,
         req.id = req_map.at("id").as_int();
         req.type = req_map.at("type").as_string();
 
-        if (req.type != "Map") {
+        if ((req.type == "Bus") || (req.type == "Stop")) {
           req.name = req_map.at("name").as_string();
+          req.from = "";
+          req.to = "";
         } else {
           req.name = "";
+          if (req.type == "Route") {
+            req.from = req_map.at("from").as_string();
+            req.to = req_map.at("to").as_string();
+          } else {
+            req.from = "";
+            req.to = "";
+          }
         }
 
         stat_request.push_back(req);
@@ -264,9 +273,31 @@ void JSONReader::parse_node_render(const Node &node,
   }
 }
 
+void JSONReader::parse_node_routing(const Node &node,
+                                    router::RoutingSettings &route_set) {
+  Dict route;
+
+  if (node.is_dict()) {
+    route = node.as_dict();
+
+    try {
+
+      route_set.bus_wait_time = route.at("bus_wait_time").as_double();
+      route_set.bus_velocity = route.at("bus_velocity").as_double();
+
+    } catch (...) {
+      std::cout << "unable to parse routing settings";
+    }
+
+  } else {
+    std::cout << "routing settings is not map";
+  }
+}
+
 void JSONReader::parse_node(const Node &root, TransportCatalogue &catalogue,
                             std::vector<StatRequest> &stat_request,
-                            map_renderer::RenderSettings &render_settings) {
+                            map_renderer::RenderSettings &render_settings,
+                            router::RoutingSettings &routing_settings) {
   Dict root_dictionary;
 
   if (root.is_dict()) {
@@ -290,6 +321,13 @@ void JSONReader::parse_node(const Node &root, TransportCatalogue &catalogue,
       std::cout << "render_settings is empty";
     }
 
+    try {
+      parse_node_routing(root_dictionary.at("routing_settings"),
+                         routing_settings);
+    } catch (...) {
+      std::cout << "routing_settings is empty";
+    }
+
   } else {
     std::cout << "root is not map";
   }
@@ -297,8 +335,10 @@ void JSONReader::parse_node(const Node &root, TransportCatalogue &catalogue,
 
 void JSONReader::parse(TransportCatalogue &catalogue,
                        std::vector<StatRequest> &stat_request,
-                       map_renderer::RenderSettings &render_settings) {
-  parse_node(document_.get_root(), catalogue, stat_request, render_settings);
+                       map_renderer::RenderSettings &render_settings,
+                       router::RoutingSettings &routing_settings) {
+  parse_node(document_.get_root(), catalogue, stat_request, render_settings,
+             routing_settings);
 }
 
 } // end namespace json

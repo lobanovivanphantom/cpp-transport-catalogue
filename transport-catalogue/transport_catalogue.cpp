@@ -25,6 +25,7 @@ void TransportCatalogue::add_bus(Bus &&bus) {
 }
 
 void TransportCatalogue::add_distance(const std::vector<Distance> &distances) {
+
   for (auto distance : distances) {
     auto dist_pair = std::make_pair(distance.start, distance.end);
     distance_to_stop.insert(
@@ -37,9 +38,9 @@ Bus *TransportCatalogue::get_bus(std::string_view bus_name) {
     return nullptr;
   }
 
-  try {
+  if (busname_to_bus.count(bus_name)) {
     return busname_to_bus.at(bus_name);
-  } catch (const std::out_of_range &e) {
+  } else {
     return nullptr;
   }
 }
@@ -49,9 +50,9 @@ Stop *TransportCatalogue::get_stop(std::string_view stop_name) {
     return nullptr;
   }
 
-  try {
+  if (stopname_to_stop.count(stop_name)) {
     return stopname_to_stop.at(stop_name);
-  } catch (const std::out_of_range &e) {
+  } else {
     return nullptr;
   }
 }
@@ -64,7 +65,6 @@ StopMap TransportCatalogue::get_stopname_to_stop() const {
 
 std::unordered_set<const Stop *> TransportCatalogue::get_uniq_stops(Bus *bus) {
   std::unordered_set<const Stop *> unique_stops;
-
   unique_stops.insert(bus->stops.begin(), bus->stops.end());
 
   return unique_stops;
@@ -82,29 +82,31 @@ double TransportCatalogue::get_length(Bus *bus) {
 std::unordered_set<const Bus *>
 TransportCatalogue::stop_get_uniq_buses(Stop *stop) {
   std::unordered_set<const Bus *> unique_stops;
-
   unique_stops.insert(stop->buses.begin(), stop->buses.end());
 
   return unique_stops;
 }
 
 size_t TransportCatalogue::get_distance_stop(const Stop *begin,
-                                             const Stop *finish) {
+                                             const Stop *finish) const {
+
   if (distance_to_stop.empty()) {
     return 0;
-  }
 
-  try {
+  } else {
 
-    auto dist_pair = std::make_pair(begin, finish);
-    return distance_to_stop.at(dist_pair);
+    if (const auto &stop_ptr_pair = std::make_pair(begin, finish);
+        distance_to_stop.count(stop_ptr_pair)) {
 
-  } catch (const std::out_of_range &e) {
+      return distance_to_stop.at(stop_ptr_pair);
 
-    try {
-      auto dist_pair = std::make_pair(finish, begin);
-      return distance_to_stop.at(dist_pair);
-    } catch (const std::out_of_range &e) {
+    } else if (const auto &stop_ptr_pair = std::make_pair(finish, begin);
+               distance_to_stop.count(stop_ptr_pair)) {
+
+      return distance_to_stop.at(stop_ptr_pair);
+
+    } else {
+
       return 0;
     }
   }
@@ -113,9 +115,11 @@ size_t TransportCatalogue::get_distance_stop(const Stop *begin,
 size_t TransportCatalogue::get_distance_to_bus(Bus *bus) {
   size_t distance = 0;
   auto stops_size = bus->stops.size() - 1;
+
   for (int i = 0; i < static_cast<int>(stops_size); i++) {
     distance += get_distance_stop(bus->stops[i], bus->stops[i + 1]);
   }
+
   return distance;
 }
 

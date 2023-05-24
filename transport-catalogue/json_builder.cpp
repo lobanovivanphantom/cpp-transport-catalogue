@@ -5,8 +5,6 @@ namespace detail {
 namespace json {
 namespace builder {
 
-//---------------------BaseContext---------------------
-
 BaseContext::BaseContext(Builder &builder) : builder_(builder) {}
 
 KeyContext BaseContext::key(const std::string &key) {
@@ -26,27 +24,19 @@ ArrayContext BaseContext::start_array() {
 }
 Builder &BaseContext::end_array() { return builder_.end_array(); }
 
-//---------------------KeyContext-----------------------
-
 KeyContext::KeyContext(Builder &builder) : BaseContext(builder) {}
 
 DictionaryContext KeyContext::value(const Node::Value &value) {
   return BaseContext::value(std::move(value));
 }
 
-//---------------------DictionaryContext----------------
-
 DictionaryContext::DictionaryContext(Builder &builder) : BaseContext(builder) {}
-
-//---------------------ArrayContext---------------------
 
 ArrayContext::ArrayContext(Builder &builder) : BaseContext(builder) {}
 
 ArrayContext ArrayContext::value(const Node::Value &value) {
   return BaseContext::value(std::move(value));
 }
-
-//---------------------Builder--------------------------
 
 Node Builder::make_node(const Node::Value &value_) {
   Node node;

@@ -2,6 +2,41 @@
 
 namespace request_handler {
 
+struct EdgeInfoGetter {
+
+  Node operator()(const StopEdge &edge_info) {
+    using namespace std::literals;
+
+    return Builder{}
+        .start_dict()
+        .key("type")
+        .value("Wait")
+        .key("stop_name")
+        .value(std::string(edge_info.name))
+        .key("time")
+        .value(edge_info.time)
+        .end_dict()
+        .build();
+  }
+
+  Node operator()(const BusEdge &edge_info) {
+    using namespace std::literals;
+
+    return Builder{}
+        .start_dict()
+        .key("type")
+        .value("Bus")
+        .key("bus")
+        .value(std::string(edge_info.bus_name))
+        .key("span_count")
+        .value(static_cast<int>(edge_info.span_count))
+        .key("time")
+        .value(edge_info.time)
+        .end_dict()
+        .build();
+  }
+};
+
 Node RequestHandler::execute_make_node_stop(int id_request,
                                             const StopQueryResult &stop_info) {
   Node result;
@@ -101,10 +136,51 @@ Node RequestHandler::execute_make_node_map(int id_request,
   return result;
 }
 
+Node RequestHandler::execute_make_node_route(StatRequest &request,
+                                             TransportCatalogue &catalogue,
+                                             TransportRouter &routing) {
+  const auto &route_info =
+      get_route_info(request.from, request.to, catalogue, routing);
+
+  if (!route_info) {
+    return Builder{}
+        .start_dict()
+        .key("request_id")
+        .value(request.id)
+        .key("error_message")
+        .value("not found")
+        .end_dict()
+        .build();
+  }
+
+  Array items;
+  for (const auto &item : route_info->edges) {
+    items.emplace_back(std::visit(EdgeInfoGetter{}, item));
+  }
+
+  return Builder{}
+      .start_dict()
+      .key("request_id")
+      .value(request.id)
+      .key("total_time")
+      .value(route_info->total_time)
+      .key("items")
+      .value(items)
+      .end_dict()
+      .build();
+}
+
 void RequestHandler::execute_queries(TransportCatalogue &catalogue,
                                      std::vector<StatRequest> &stat_requests,
-                                     RenderSettings &render_settings) {
+                                     RenderSettings &render_settings,
+                                     RoutingSettings &routing_settings) {
+
   std::vector<Node> result_request;
+  TransportRouter routing;
+
+  routing.set_routing_settings(routing_settings);
+  routing.build_router(catalogue);
+
   for (StatRequest req : stat_requests) {
 
     if (req.type == "Stop") {
@@ -118,6 +194,10 @@ void RequestHandler::execute_queries(TransportCatalogue &catalogue,
     } else if (req.type == "Map") {
       result_request.push_back(
           execute_make_node_map(req.id, catalogue, render_settings));
+
+    } else if (req.type == "Route") {
+      result_request.push_back(
+          execute_make_node_route(req, catalogue, routing));
     }
   }
 
@@ -132,6 +212,7 @@ void RequestHandler::execute_render_map(MapRenderer &map_catalogue,
   int palette_index = 0;
 
   palette_size = map_catalogue.get_palette_size();
+
   if (palette_size == 0) {
     std::cout << "color palette is empty";
     return;
@@ -188,6 +269,16 @@ void RequestHandler::execute_render_map(MapRenderer &map_catalogue,
   }
 }
 
+std::optional<RouteInfo>
+RequestHandler::get_route_info(std::string_view start, std::string_view end,
+                               TransportCatalogue &catalogue,
+                               TransportRouter &routing) const {
+
+  return routing.get_route_info(
+      routing.get_router_by_stop(catalogue.get_stop(start))->bus_wait_start,
+      routing.get_router_by_stop(catalogue.get_stop(end))->bus_wait_start);
+}
+
 std::vector<geo::Coordinates>
 RequestHandler::get_stops_coordinates(TransportCatalogue &catalogue_) const {
 
@@ -195,6 +286,7 @@ RequestHandler::get_stops_coordinates(TransportCatalogue &catalogue_) const {
   auto buses = catalogue_.get_busname_to_bus();
 
   for (auto &[busname, bus] : buses) {
+
     for (auto &stop : bus->stops) {
       geo::Coordinates coordinates;
       coordinates.latitude = stop->latitude;
@@ -234,9 +326,10 @@ BusQueryResult RequestHandler::bus_query(TransportCatalogue &catalogue,
   if (bus != nullptr) {
     bus_info.name = bus->name;
     bus_info.not_found = false;
-    bus_info.stops_on_route = bus->stops.size();
-    bus_info.unique_stops = catalogue.get_uniq_stops(bus).size();
-    bus_info.route_length = bus->route_length;
+    bus_info.stops_on_route = static_cast<int>(bus->stops.size());
+    bus_info.unique_stops =
+        static_cast<int>(catalogue.get_uniq_stops(bus).size());
+    bus_info.route_length = static_cast<int>(bus->route_length);
     bus_info.curvature =
         double(catalogue.get_distance_to_bus(bus) / catalogue.get_length(bus));
   } else {
@@ -260,6 +353,7 @@ StopQueryResult RequestHandler::stop_query(TransportCatalogue &catalogue,
     unique_buses = catalogue.stop_get_uniq_buses(stop);
 
     if (unique_buses.size() > 0) {
+
       for (const Bus *bus : unique_buses) {
         stop_info.buses_name.push_back(bus->name);
       }

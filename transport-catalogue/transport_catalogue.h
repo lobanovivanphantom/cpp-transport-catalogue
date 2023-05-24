@@ -1,5 +1,4 @@
 #pragma once
-#include "domain.h"
 #include <deque>
 #include <iomanip>
 #include <iostream>
@@ -7,6 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "domain.h"
 
 using namespace domain;
 
@@ -44,7 +45,7 @@ public:
   std::unordered_set<const Stop *> get_uniq_stops(Bus *bus);
   double get_length(Bus *bus);
 
-  size_t get_distance_stop(const Stop *start, const Stop *finish);
+  size_t get_distance_stop(const Stop *start, const Stop *finish) const;
   size_t get_distance_to_bus(Bus *bus);
 
 private:
