@@ -176,10 +176,10 @@ void RequestHandler::execute_queries(TransportCatalogue &catalogue,
                                      RoutingSettings &routing_settings) {
 
   std::vector<Node> result_request;
-  TransportRouter routing;
+  TransportRouter transport_router;
 
-  routing.set_routing_settings(routing_settings);
-  routing.build_router(catalogue);
+  transport_router.set_routing_settings(routing_settings);
+  transport_router.build_router(catalogue);
 
   for (StatRequest req : stat_requests) {
 
@@ -197,7 +197,7 @@ void RequestHandler::execute_queries(TransportCatalogue &catalogue,
 
     } else if (req.type == "Route") {
       result_request.push_back(
-          execute_make_node_route(req, catalogue, routing));
+          execute_make_node_route(req, catalogue, transport_router));
     }
   }
 

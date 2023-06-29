@@ -158,11 +158,13 @@ void JSONReader::parse_node_stat(const Node &node,
           req.name = req_map.at("name").as_string();
           req.from = "";
           req.to = "";
+
         } else {
           req.name = "";
           if (req.type == "Route") {
             req.from = req_map.at("from").as_string();
             req.to = req_map.at("to").as_string();
+
           } else {
             req.from = "";
             req.to = "";
@@ -174,7 +176,7 @@ void JSONReader::parse_node_stat(const Node &node,
     }
 
   } else {
-    std::cout << "base_requests is not array";
+    std::cout << "stat_requests is not array";
   }
 }
 
@@ -294,38 +296,60 @@ void JSONReader::parse_node_routing(const Node &node,
   }
 }
 
-void JSONReader::parse_node(const Node &root, TransportCatalogue &catalogue,
-                            std::vector<StatRequest> &stat_request,
-                            map_renderer::RenderSettings &render_settings,
-                            router::RoutingSettings &routing_settings) {
+void JSONReader::parse_node_serialization(
+    const Node &node, serialization::SerializationSettings &serialization_set) {
+
+  Dict serialization;
+
+  if (node.is_dict()) {
+    serialization = node.as_dict();
+
+    try {
+      serialization_set.file_name = serialization.at("file").as_string();
+
+    } catch (...) {
+      std::cout << "unable to parse serialization settings";
+    }
+
+  } else {
+    std::cout << "serialization settings is not map";
+  }
+}
+
+void JSONReader::parse_node_make_base(
+    TransportCatalogue &catalogue,
+    map_renderer::RenderSettings &render_settings,
+    router::RoutingSettings &routing_settings,
+    serialization::SerializationSettings &serialization_settings) {
   Dict root_dictionary;
 
-  if (root.is_dict()) {
-    root_dictionary = root.as_dict();
+  if (document_.get_root().is_dict()) {
+    root_dictionary = document_.get_root().as_dict();
 
     try {
       parse_node_base(root_dictionary.at("base_requests"), catalogue);
-    } catch (...) {
-      std::cout << "base_requests is empty";
-    }
 
-    try {
-      parse_node_stat(root_dictionary.at("stat_requests"), stat_request);
     } catch (...) {
-      std::cout << "stat_requests is empty";
     }
 
     try {
       parse_node_render(root_dictionary.at("render_settings"), render_settings);
+
     } catch (...) {
-      std::cout << "render_settings is empty";
     }
 
     try {
       parse_node_routing(root_dictionary.at("routing_settings"),
                          routing_settings);
+
     } catch (...) {
-      std::cout << "routing_settings is empty";
+    }
+
+    try {
+      parse_node_serialization(root_dictionary.at("serialization_settings"),
+                               serialization_settings);
+
+    } catch (...) {
     }
 
   } else {
@@ -333,12 +357,30 @@ void JSONReader::parse_node(const Node &root, TransportCatalogue &catalogue,
   }
 }
 
-void JSONReader::parse(TransportCatalogue &catalogue,
-                       std::vector<StatRequest> &stat_request,
-                       map_renderer::RenderSettings &render_settings,
-                       router::RoutingSettings &routing_settings) {
-  parse_node(document_.get_root(), catalogue, stat_request, render_settings,
-             routing_settings);
+void JSONReader::parse_node_process_requests(
+    std::vector<StatRequest> &stat_request,
+    serialization::SerializationSettings &serialization_settings) {
+  Dict root_dictionary;
+
+  if (document_.get_root().is_dict()) {
+    root_dictionary = document_.get_root().as_dict();
+
+    try {
+      parse_node_stat(root_dictionary.at("stat_requests"), stat_request);
+
+    } catch (...) {
+    }
+
+    try {
+      parse_node_serialization(root_dictionary.at("serialization_settings"),
+                               serialization_settings);
+
+    } catch (...) {
+    }
+
+  } else {
+    std::cout << "root is not map";
+  }
 }
 
 } // end namespace json

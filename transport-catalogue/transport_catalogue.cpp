@@ -1,5 +1,4 @@
 #include "transport_catalogue.h"
-#include <execution>
 
 namespace transport_catalogue {
 
@@ -57,6 +56,10 @@ Stop *TransportCatalogue::get_stop(std::string_view stop_name) {
   }
 }
 
+std::deque<Stop> TransportCatalogue::get_stops() const { return stops; }
+
+std::deque<Bus> TransportCatalogue::get_buses() const { return buses; }
+
 BusMap TransportCatalogue::get_busname_to_bus() const { return busname_to_bus; }
 
 StopMap TransportCatalogue::get_stopname_to_stop() const {
@@ -85,6 +88,10 @@ TransportCatalogue::stop_get_uniq_buses(Stop *stop) {
   unique_stops.insert(stop->buses.begin(), stop->buses.end());
 
   return unique_stops;
+}
+
+DistanceMap TransportCatalogue::get_distance() const {
+  return distance_to_stop;
 }
 
 size_t TransportCatalogue::get_distance_stop(const Stop *begin,

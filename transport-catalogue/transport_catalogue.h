@@ -2,6 +2,7 @@
 #include <deque>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -38,6 +39,10 @@ public:
 
   Bus *get_bus(std::string_view bus_name);
   Stop *get_stop(std::string_view stop_name);
+
+  std::deque<Stop> get_stops() const;
+  std::deque<Bus> get_buses() const;
+
   BusMap get_busname_to_bus() const;
   StopMap get_stopname_to_stop() const;
 
@@ -45,6 +50,7 @@ public:
   std::unordered_set<const Stop *> get_uniq_stops(Bus *bus);
   double get_length(Bus *bus);
 
+  DistanceMap get_distance() const;
   size_t get_distance_stop(const Stop *start, const Stop *finish) const;
   size_t get_distance_to_bus(Bus *bus);
 
